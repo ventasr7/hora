@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculador de Horas y Sueldo</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 20px;
+            margin: 0;
+            max-width: 700px;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: white;
+        }
+        h1, h2 {
+            color: #0056b3;
+        }
+        input[type="number"], button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #004494;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background-color: #0056b3;
+            color: white;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        td button {
+            background-color: #dc3545;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        td button:hover {
+            background-color: #c82333;
+        }
+        h3 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Calculador de Horas y Sueldo</h1>
+    
+    <h2>Calcular Pago por Horas</h2>
+    <input type="number" id="horasCalculo" placeholder="Horas trabajadas" min="0">
+    <button id="calcularPago">Calcular Pago</button>
+    <h3>Pago Total: <span id="pagoTotal">0</span> ARS</h3>
+
+    <h2>Registrar Horas Trabajadas</h2>
+    <input type="number" id="horas" placeholder="Horas trabajadas" min="0">
+    <button id="registrarHoras">Aceptar</button>
+
+    <h2>Horas Registradas</h2>
+    <table id="tablaHoras">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Horas</th>
+                <th>Pago</th>
+                <th>Eliminar</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    
+    <h3>Total a Pagar: <span id="totalPago">0</span> ARS</h3>
+
+    <script>
+        const botonCalcular = document.getElementById('calcularPago');
+        const botonRegistrar = document.getElementById('registrarHoras');
+        const tablaHoras = document.getElementById('tablaHoras').getElementsByTagName('tbody')[0];
+        const pagoTotal = document.getElementById('pagoTotal');
+        const totalPago = document.getElementById('totalPago');
+        let total = 0;
+
+        function cargarDatos() {
+            const datos = JSON.parse(localStorage.getItem('horasRegistradas')) || [];
+            datos.forEach(item => agregarFila(item.fecha, item.horas, item.pagoTotalHoras));
+        }
+
+        function agregarFila(fecha, horas, pagoTotalHoras) {
+            const nuevaFila = tablaHoras.insertRow();
+            nuevaFila.innerHTML = `
+                <td>${fecha}</td>
+                <td>${horas}</td>
+                <td>${pagoTotalHoras.toFixed(2)}</td>
+                <td><button class="eliminar">Eliminar</button></td>
+            `;
+            total += pagoTotalHoras;
+
+            totalPago.textContent = total.toFixed(2);
+
+            const botonEliminar = nuevaFila.querySelector('.eliminar');
+            botonEliminar.addEventListener('click', function() {
+                total -= pagoTotalHoras;
+                totalPago.textContent = total.toFixed(2);
+                tablaHoras.deleteRow(nuevaFila.rowIndex - 1);
+                actualizarLocalStorage();
+            });
+        }
+
+        function actualizarLocalStorage() {
+            const filas = Array.from(tablaHoras.rows).slice(1);
+            const datos = filas.map(row => {
+                return {
+                    fecha: row.cells[0].innerText,
+                    horas: parseFloat(row.cells[1].innerText),
+                    pagoTotalHoras: parseFloat(row.cells[2].innerText)
+                };
+            });
+            localStorage.setItem('horasRegistradas', JSON.stringify(datos));
+        }
+
+        botonCalcular.addEventListener('click', function() {
+            const horasCalculo = parseFloat(document.getElementById('horasCalculo').value);
+            if (!isNaN(horasCalculo)) {
+                const pagoPorHora = 293;
+                const sueldoBase = 13900;
+                const totalPagoCalculo = (horasCalculo * pagoPorHora) + sueldoBase;
+                pagoTotal.textContent = totalPagoCalculo.toFixed(2);
+            } else {
+                alert('Por favor, introduce un número válido de horas.');
+            }
+        });
+
+        botonRegistrar.addEventListener('click', function() {
+            const horas = parseFloat(document.getElementById('horas').value);
+            if (!isNaN(horas)) {
+                const fechaActual = new Date().toLocaleDateString('es-ES', {
+                    day: 'numeric', month: 'long', year: 'numeric'
+                });
+                const pagoPorHora = 293;
+                const pagoTotalHoras = horas * pagoPorHora;
+
+                agregarFila(fechaActual, horas, pagoTotalHoras);
+                actualizarLocalStorage();
+
+                document.getElementById('horas').value = '';
+            } else {
+                alert('Por favor, completa los campos correctamente.');
+            }
+        });
+
+        // Cargar datos al iniciar
+        window.onload = cargarDatos;
+
+    </script>
+
+</body>
+</html>
